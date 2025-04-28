@@ -1,0 +1,57 @@
+// Импортируем test и expect из библиотеки @playwright/test
+const { test, expect } = require('@playwright/test');
+
+// Позитивный тест для формы
+test('Корректная отправка формы', async ({ page }) => {
+  // Открываем страницу
+  await page.goto('https://qatest.datasub.com/');
+
+  // Находим блок "Request A Quote" и прокручиваем страницу до него
+  const requestQuoteHeader = page.locator('h5', { hasText: 'Request A Quote' });
+  await requestQuoteHeader.scrollIntoViewIfNeeded();  // Прокручиваем страницу до заголовка 
+
+  // Заполняем поля формы
+  await page.fill('input#name', 'Test Test');
+  await page.fill('input#email', 'test.test@example.com');
+  await page.selectOption('select#service', { label: 'Select B Service' });
+  await page.click('input#purposeBusiness');
+  await page.click('input#withdrawCash');
+  await page.click('input#withdrawCard');
+  await page.fill('textarea#message', 'Тестовое сообщение для формы');
+
+  // Отправляем форму
+  //await page.click('button[type="submit"]');
+  
+  // Отправляем форму
+  await Promise.all([
+    page.click('button:has-text("Request A Quote")')
+  ]);
+  
+  // Или проверяем сообщение об успехе
+// Ищет видимый текст на странице (учитывает visibility и display)
+const successText = page.getByText('Форма отправлена.', { exact: true });
+await expect(successText).toBeVisible();
+});
+
+
+// Негативный тест для формы
+test('Ошибка при пустом имени', async ({ page }) => {
+  await page.goto('https://qatest.datasub.com/');
+  const requestQuoteHeader = page.locator('h5', { hasText: 'Request A Quote' });
+  await requestQuoteHeader.scrollIntoViewIfNeeded();
+
+  // Заполняем форму с ошибкой (без имени)
+  await page.fill('input#name', ''); //Пустое поле Name
+  await page.fill('input#email', 'test.teste@example.com');
+  await page.selectOption('select#service', { label: 'Select B Service' });
+  await page.click('input#purposeBusiness');
+  await page.click('input#withdrawCash');
+  await page.click('input#withdrawCard');
+  await page.fill('textarea#message', 'Тестовое сообщение для формы');
+
+  // Отправляем форму
+  await page.click('button:has-text("Request A Quote")');
+
+  // Проверяем, что форма не отправлена
+  await expect(page.getByText('Форма отправлена.')).not.toBeVisible();
+});
